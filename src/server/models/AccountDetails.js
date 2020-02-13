@@ -25,16 +25,21 @@ const createAccountDetailsTable=({force=false}={force:false})=>{
     })
 }
 
-const createNewAccount=({force=false}={force:false})=>{
+const createNewAccount=(custId,pin)=>{
     return new Promise((resolve,reject)=>{
         const adminAccount=AccountDetails.build({
-            custId:1000,
-            pin:1234,
-            balance:10000
+            custId,
+            pin,
+            balance:1000
         });
         adminAccount.save()
-        .then(result=>{console.log(result.get());resolve(result.get())})
-        .catch(console.error);
+        .then(result=>{
+            resolve(result);
+            })
+        .catch(error=>{
+            console.log(error);
+            reject(error);
+        });
     })
 }
 const authenticateUser=(custId,pin)=>{
@@ -66,7 +71,7 @@ const withDraw=(amount,custId)=>{
         try{
         const customer=await AccountDetails.findOne({
                     where:{
-                    custId:1000
+                    custId:custId
             }
         });
         console.log(customer);
@@ -91,7 +96,7 @@ const deposit=(amount,custId)=>{
     return new Promise(async(resolve,reject)=>{
         const customer=await AccountDetails.findOne({
                     where:{
-                    custId:1000
+                    custId:custId
             }
         });
         console.log(customer);
@@ -106,7 +111,7 @@ const changePIN=(oldPin,newPin,custId)=>{
     return new Promise(async(resolve,reject)=>{
         await AccountDetails.findOne({
             where:{
-            custId:1000,pin:oldPin
+            custId:custId,pin:oldPin
             }   
         })
     .then(async(customer)=>{
@@ -129,11 +134,10 @@ const getBalance=(custId)=>{
         
         await AccountDetails.findOne({
             where:{
-            custId:1000
+            custId:custId
             }   
         })
     .then(async(customer)=>{
-        console.log("This is the balance",customer.balance);
         resolve(customer.balance);
     })
     .catch(error=>{

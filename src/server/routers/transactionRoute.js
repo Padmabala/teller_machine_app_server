@@ -1,19 +1,27 @@
 const express=require('express');
-const {withDraw,deposit,changePIN,getBalance,authenticateUser}=require("../models/AccountDetails");
+const {withDraw,deposit,changePIN,getBalance,authenticateUser,createNewAccount}=require("../models/AccountDetails");
 const transactionRoute=express.Router();
 
-
+let sess="";
 transactionRoute.route('/login')
 .post((req,res)=>{
-    console.log(req.body," is the request body");
     const {custId,pin}=req.body;
     authenticateUser(custId,pin)
-        .then((custID)=>{
-            console.log("Cust Id is",custID);
-            console.log(req.cookies);
-            res.cookie('custId',custID,{httpOnly:true});
-            const {customerId}=req.cookies;
-            console.log("5555",customerId);
+        .then((userId)=>{
+            sess=req.session;
+            sess.custId=userId;
+            res.status(200).send('ok');
+        })
+        .catch((error)=>{
+            console.log(error);
+            res.status(403).send();
+        })
+})
+transactionRoute.route('/newUser')
+.post((req,res)=>{
+    const {custId,pin}=req.body;
+    createNewAccount(custId,pin)
+        .then((result)=>{
             res.status(200).send();
         })
         .catch((error)=>{
@@ -24,12 +32,9 @@ transactionRoute.route('/login')
 
 transactionRoute.route('/withdraw')
 .post((req,res)=>{
-    const {custId=""}=req.cookies;
-    
-    console.log("Cookies is******************* ",custId)
-    if(custId===""){
+    if(sess!==undefined){
     const {amount}=req.body;
-    withDraw(amount)
+    withDraw(amount,sess.custId)
         .then((result)=>{
             res.status(200).send();
         })
@@ -39,18 +44,14 @@ transactionRoute.route('/withdraw')
         })
     }
     else{
-        res.status(403).send();
+        res.status(440).send();
     }
 })
 transactionRoute.route('/deposit')
 .post((req,res)=>{
-    const {custId=""}=req.cookies;
-    
-    console.log("Cookies is******************* ",custId)
-    if(custId===""){
+    if(sess!==undefined){
     const {amount}=req.body;
-    console.log("Amount is ",amount);
-    deposit(amount)
+    deposit(amount,sess.custId)
         .then((result)=>{
             res.status(200).send();
         })
@@ -60,21 +61,17 @@ transactionRoute.route('/deposit')
         })
     }
     else{
-        res.status(403).send();
+        res.status(440).send();
     }
 })
 transactionRoute.route('/changePIN')
 .post((req,res)=>{
     
-    const {custId=""}=req.cookies;
-    
-    console.log("Cookies is******************* ",custId)
-    if(custId===""){
+    if(sess!==undefined){
     const {amount}=req.body;
-    console.log("ChangePIN",req.body);
     const {oldPin,newPin}=req.body;
     
-    changePIN(oldPin,newPin)
+    changePIN(oldPin,newPin,sess.custId)
         .then((result)=>{
             res.status(200).send();
         })
@@ -84,16 +81,14 @@ transactionRoute.route('/changePIN')
         })
     }
     else{
-        res.status(403).send();
+        res.status(440).send();
     }
 })
 transactionRoute.route('/balance')
-.get((req,res)=>{
-    
-    const {custId=""}=req.cookies;
-    
-    if(custId===""){
-    getBalance()
+.get((req,res)=>{    
+     
+    if(sess!==undefined){
+    getBalance(sess.custId)
         .then((result)=>{
             res.status(200).json(result);
         })
@@ -103,18 +98,22 @@ transactionRoute.route('/balance')
         })
     }
     else{
-        res.status(403).send();
+        res.status(440).send();
     }
 })
 
 transactionRoute.route('/logout')
 .get((req,res)=>{
-    const {custId=""}=req.cookies;
-    console.log("Cookie stays",req.cookies.custId);
-    res.clearCookie('custId');
     
-    console.log("Cookie is cleared",req.cookies.custId);
-
+    req.session.destroy((err)=>{
+        if(err){
+            console.log(err)
+        }
+        else{
+            res.status(200).send();
+            sess=req.session
+        }
+    })
 })
 
 module.exports=transactionRoute;
