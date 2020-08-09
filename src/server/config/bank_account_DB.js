@@ -5,7 +5,7 @@ const bankAccountDB=new Sequelize(process.env.DB_URI);
 bankAccountDB
 .authenticate()
 .then(()=>{
-    console.log("DB Connection established");
+    console.log("DB Connection establisheed");
 })
 .catch(()=>{
     console.log("Failed to establish DB connection");

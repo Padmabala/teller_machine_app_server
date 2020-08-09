@@ -13,6 +13,8 @@ app.use(bodyParser.json())
 
 app.use(session({resave:true,saveUninitialized:true,secret:'shhh',cookie:{maxAge:60000}}))
 
+//Execute the script from Postman
+
 app.use('/account',transactionRouter);
 
 const server=app.listen(process.env.PORT,()=>{
